@@ -7,7 +7,6 @@ let {
 } = require("../Validation/validator");
 let mongoose = require("mongoose");
 let jwt = require("jsonwebtoken");
-const { query } = require("express");
 
 
 //Creating Blogs=======================================>
@@ -195,6 +194,7 @@ const deleteBlog = async function (req, res) {
 
 
 //deleting the blogs by query params=======================================>
+
 const deleteByKeys = async function (req, res) {
   try {
         let decodedId=req.decodedToken.userId
@@ -203,53 +203,53 @@ const deleteByKeys = async function (req, res) {
 
       if (!keyValid(data)) return res.status(400).send({ status: false, msg: "Please give input" })
 
-      let {authorId,category,subcategory,tags,isPublished}=data
-      
-      
-   
+      let {authorId,category,subcategory,tags}=data
+      let filter={}
 
-      // checking , if any filter has no value
-
-      if(!authorId)  return res.status(400).send({ status: false, msg: 'please provide authorId' })
-
-      if(!isPublished) return res.status(400).send({ status: false, msg: 'please provide isPublished' })
-
-    if (authorId) {
+      if(authorId){
         if(!idCharacterValid(authorId)) return res.status(400).send({ status: false, msg: 'please Give the valid AuthorID' })
-    }
+        if(decodedId!=authorId) return res.status(404).send({ status: false, msg:"you are not the Authorized person to delete" }) 
+        filter.authorId=authorId
+      }
 
      if (category) {
           if (!isValidString(category)) return res.status(400).send({ status: false, msg: 'please provide category' })
+          filter.category=category
       }
       if (subcategory) {
           if (!isValidString(subcategory)) return res.status(400).send({ status: false, msg: 'please provide subcategory' })
+          filter.subcategory=subcategory
       }
       if (tags) {
           if (!isValidString(tags)) return res.status(400).send({ status: false, msg: 'please provide tags' })
+          filter.tags=tags
       }
-      
-      if(decodedId!==authorId) return res.status(404).send({ status: false, msg:"you are not the Authorized person to delete" }) 
+      let getTheblog=await blogSchema.find(filter).select({authorId:1})
+      if(getTheblog.length===0) return res.status(404).send({ status: false, msg: 'The blogs are not found' })
+      for(let i=0;i<getTheblog.length;i++){
+        if(getTheblog[i].authorId.toString()===decodedId){
+        filter.authorId=getTheblog[i].authorId,
+        filter.isDeleted=false,
+        filter.isPublished=false
+        let deleteByQuery=await blogSchema.updateMany(filter,
+        {
+          $set:{isDeleted:true,deletedAt:new Date()}
+        })
+          
+        if(deleteByQuery.modifiedCount===0) {
+          return res.status(404).send({status:false,message:"The blogs are already deleted"})
+      }
+      return res.status(200).send({status:true,message:"deleted successfully"}) 
+      }else{
+        return res.status(403).send({status:false,message:"You are not authorized to deleted"})
+      }
+    }
 
-      // checking if blog exist with given filters 
-      const blog = await blogSchema.find(data)
-      if (!keyValid(blog)) return res.status(404).send({ msg: "No blog exist with given filters " })
-
-      // checking if blog already deleted 
-      let blogs = await blogSchema.find({ authorId:authorId, isDeleted: false })
-      if (!keyValid(blogs)) return res.status(400).send({ status: false, msg: "Blogs are already deleted"})
-
-      // deleting blog
-      const deletedBlog = await blogSchema.updateMany(data, {$set:{ isDeleted: true, deletedAt: new Date() }}, { new: true })
-      if (!deletedBlog) return res.status(404).send({ status: false, msg: "No such blog found" })
-      return res.status(200).send({ msg: "blog deleted successfully" })
   }
   catch (error) {   
       res.status(500).send({ status: false, msg: error.message });
   }
 };
- 
-
-
 
 module.exports = {
   createBlogs,
