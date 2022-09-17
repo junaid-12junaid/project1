@@ -206,6 +206,8 @@ const deleteByKeys = async function (req, res) {
       let {authorId,category,subcategory,tags}=data
       let filter={}
 
+  
+
       if(authorId){
         if(!idCharacterValid(authorId)) return res.status(400).send({ status: false, msg: 'please Give the valid AuthorID' })
         if(decodedId!=authorId) return res.status(404).send({ status: false, msg:"you are not the Authorized person to delete" }) 
@@ -224,7 +226,10 @@ const deleteByKeys = async function (req, res) {
           if (!isValidString(tags)) return res.status(400).send({ status: false, msg: 'please provide tags' })
           filter.tags=tags
       }
-      let getTheblog=await blogSchema.find(filter).select({authorId:1})
+
+      console.log(filter);
+
+      let getTheblog=await blogSchema.find(filter).select({authorId:1,_id:0})
       if(getTheblog.length===0) return res.status(404).send({ status: false, msg: 'The blogs are not found' })
       for(let i=0;i<getTheblog.length;i++){
         if(getTheblog[i].authorId.toString()===decodedId){
