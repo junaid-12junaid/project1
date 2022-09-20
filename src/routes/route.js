@@ -3,7 +3,7 @@ const router = express.Router();
 const authorController=require('../Controller/authorController')
 const blogsController=require('../Controller/blogsController')
 const mid1=require('../MiddleWare/auth')
-// const midEmail=require('../middleWare/validator')
+
 
 router.post('/authors',authorController.createAuthor)
 

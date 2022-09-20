@@ -52,7 +52,7 @@ let loginAuthor=async function(req,res){
     let {email,password}=body
 
     let validLogin=await authorModel.findOne({email:email,password:password})
-    if(!validLogin) return res.status(400).send({status:false,data:"The cridentials are Incorrect"})
+    if(!validLogin) return res.status(401).send({status:false,data:"The cridentials are Incorrect"})
 
     let id=validLogin._id
     let token=jwt.sign({
